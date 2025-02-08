@@ -2,19 +2,19 @@ import telebot
 from telebot import types
 import logging
 
-BOT_API = 'YOUR_BOT_API'  # Замените на ваш токен
+BOT_API = 'YOUR_BOT_API'  
 
 bot = telebot.TeleBot(BOT_API)
 telebot.logger.setLevel(logging.INFO)
 
 storage = dict()
 
-# Функция для записи фамилии студента в файл
+
 def write_to_file(student_name):
     with open("прогульщики.txt", "a", encoding="utf-8") as file:
         file.write(student_name + "\n")
 
-# Функция для чтения содержимого файла
+
 def read_from_file():
     try:
         with open("прогульщики.txt", "r", encoding="utf-8") as file:
@@ -34,7 +34,7 @@ def start(message):
 Привет староста, выбери что ты хочешь знать:
                      ''', reply_markup=markup)
 
-# Команда /list для вывода списка прогульщиков
+
 @bot.message_handler(commands=['list'])
 def send_list(message):
     list_content = read_from_file()
@@ -45,7 +45,6 @@ def clear_list(message):
     open("прогульщики.txt", "w", encoding="utf-8").close()
     bot.send_message(message.chat.id, "Список прогульщиков очищен.")
 
-# Обработчик callback_data
 @bot.callback_query_handler(func=lambda call: True)
 def answer(call):
     if call.data == 'Stydentu':
@@ -76,12 +75,11 @@ def answer(call):
         bot.send_message(call.message.chat.id, 'Выбери студента:', reply_markup=markup)
     
     else:
-        # Если callback_data не 'Stydentu', значит это фамилия студента
         student_name = call.data
-        write_to_file(student_name)  # Записываем фамилию студента в файл
+        write_to_file(student_name)  
         bot.answer_callback_query(call.id, f"{student_name} записан в список прогульщиков.")
 
 
 
-# Запуск бота
+
 bot.polling()
