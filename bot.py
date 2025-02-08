@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import logging
 
-BOT_API = '7780827860:AAGay5RraBPn8kvoCoRUM4yXolfI7RDVhho'  # Замените на ваш токен
+BOT_API = 'YOUR_BOT_API'  # Замените на ваш токен
 
 bot = telebot.TeleBot(BOT_API)
 telebot.logger.setLevel(logging.INFO)
