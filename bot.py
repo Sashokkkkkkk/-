@@ -1,8 +1,9 @@
 import telebot
 from telebot import types
 import logging
+from datetime import datetime
 
-BOT_API = 'YOUR_BOT_API'
+BOT_API = '7780827860:AAGay5RraBPn8kvoCoRUM4yXolfI7RDVhho'
 
 bot = telebot.TeleBot(BOT_API)
 telebot.logger.setLevel(logging.INFO)
@@ -17,24 +18,27 @@ def write_to_file(student_names, date, pair_info):
 def read_from_file():
     try:
         with open("прогульщики.txt", "r", encoding="utf-8") as file:
-            return file.read()
+            return file.readlines()
     except FileNotFoundError:
-        return "Список прогульщиков пуст."
+        return []
+
+def filter_by_month(entries):
+    current_month = datetime.now().strftime("%m.%Y")
+    return [entry for entry in entries if current_month in entry]
+
+def filter_by_day(entries, date):
+    return [entry for entry in entries if date in entry]
 
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('/start')
-    btn2 = types.KeyboardButton('/students')
-    btn3 = types.KeyboardButton('/done')
-    btn4 = types.KeyboardButton('/list')
-    btn5 = types.KeyboardButton('/clear')
-    markup.add(btn1, btn2, btn3, btn4, btn5)
+    btn1 = types.KeyboardButton('/students')
+    btn2 = types.KeyboardButton('/list')
+    btn3 = types.KeyboardButton('/clear')
+    markup.add(btn1, btn2, btn3)
     bot.send_message(message.chat.id, '''
 Привет староста, выбери что ты хочешь знать:
-Чтобы начать нажми /start
 Чтобы вывести список студентов, нажми на кнопку /students
-Чтобы подтвердить список прогульщиков, нажми на кнопку /done
 Чтобы вывести список прогульщиков, используйте команду /list
 Чтобы очистить список прогульщиков, используйте команду /clear
 
@@ -42,13 +46,29 @@ def start(message):
 
 @bot.message_handler(commands=['list'])
 def send_list(message):
-    list_content = read_from_file()
-    bot.send_message(message.chat.id, f"Список прогульщиков:\n{list_content}")
+    entries = read_from_file()
+    monthly_entries = filter_by_month(entries)
+    if monthly_entries:
+        bot.send_message(message.chat.id, f"Список прогульщиков за текущий месяц:\n{''.join(monthly_entries)}")
+    else:
+        bot.send_message(message.chat.id, "Список прогульщиков за текущий месяц пуст.")
 
 @bot.message_handler(commands=['clear'])
 def clear_list(message):
-    open("прогульщики.txt", "w", encoding="utf-8").close()
-    bot.send_message(message.chat.id, "Список прогульщиков очищен.")
+    bot.send_message(message.chat.id, "Введите дату для очистки в формате ДД.ММ.ГГГГ:")
+    bot.register_next_step_handler(message, handle_clear_date)
+
+def handle_clear_date(message):
+    date = message.text
+    try:
+        datetime.strptime(date, "%d.%m.%Y")  # Проверка корректности даты
+        entries = read_from_file()
+        remaining_entries = [entry for entry in entries if date not in entry]
+        with open("прогульщики.txt", "w", encoding="utf-8") as file:
+            file.writelines(remaining_entries)
+        bot.send_message(message.chat.id, f"Записи за {date} удалены.")
+    except ValueError:
+        bot.send_message(message.chat.id, "Некорректный формат даты. Используйте формат ДД.ММ.ГГГГ.")
 
 @bot.message_handler(func=lambda message: message.text == '/students')
 def handle_students(message):
@@ -75,7 +95,8 @@ def handle_students(message):
     btn21 = types.InlineKeyboardButton('Тронин Илья', callback_data='Тронин Илья')
     btn22 = types.InlineKeyboardButton('Чутов Кирилл', callback_data='Чутов Кирилл')
     btn23 = types.InlineKeyboardButton('Шувалов Андрей', callback_data='Шувалов Андрей')
-    markup.add(btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10, btn11, btn12, btn13, btn14, btn15, btn16, btn17, btn18, btn19, btn20, btn21, btn22, btn23)
+    btn24 = types.InlineKeyboardButton('Готово', callback_data='Готово')
+    markup.add(btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10, btn11, btn12, btn13, btn14, btn15, btn16, btn17, btn18, btn19, btn20, btn21, btn22, btn23, btn24)
     bot.send_message(message.chat.id, 'Выбери студентов:', reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -85,21 +106,17 @@ def answer(call):
         storage[user_id] = {'students': []}
     
     student_name = call.data
-    if student_name in storage[user_id]['students']:
-        storage[user_id]['students'].remove(student_name)
+    if student_name == 'Готово':
+        if storage[user_id]['students']:
+            bot.send_message(call.message.chat.id, "Введите дату пропуска в формате ДД.ММ.ГГГГ:")
+            bot.register_next_step_handler(call.message, handle_date)
+        else:
+            bot.send_message(call.message.chat.id, "Вы не выбрали ни одного студента.")
     else:
-        storage[user_id]['students'].append(student_name)
-    
-   
-
-@bot.message_handler(commands=['done'])
-def handle_done(message):
-    user_id = message.from_user.id
-    if user_id in storage and storage[user_id]['students']:
-        bot.send_message(message.chat.id, "Введите дату пропуска в формате ДД.ММ.ГГГГ:")
-        bot.register_next_step_handler(message, handle_date)
-    else:
-        bot.send_message(message.chat.id, "Вы не выбрали ни одного студента.")
+        if student_name in storage[user_id]['students']:
+            storage[user_id]['students'].remove(student_name)
+        else:
+            storage[user_id]['students'].append(student_name)
 
 def handle_date(message):
     user_id = message.from_user.id
