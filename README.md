@@ -1,12 +1,8 @@
 Бот для старосты @Hdjehevhehdh_bot
-труктура проекта
+структура проекта
 Copy
 telegram-bot/
-├── bot.py                # Основной файл с кодом бота
-├── requirements.txt      # Список зависимостей
-├── прогульщики.txt       # Файл для хранения данных о пропусках
-├── README.md             # Документация
-└── LICENSE               # Лицензия
+
 requirements.txt
 Copy
 pyTelegramBotAPI==4.12.0
