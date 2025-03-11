@@ -1,6 +1,6 @@
 Бот для старосты @Hdjehevhehdh_bot
 
-структура проекта
+структура проекта:
 
 Copy
 telegram-bot/
